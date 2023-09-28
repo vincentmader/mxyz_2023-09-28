@@ -1,24 +1,19 @@
+use yew::functional::*;
 use yew::prelude::*;
+use yew_router::prelude::*;
 
-#[function_component]
-fn ButtonClickCounter() -> Html {
-    let counter = use_state(|| 0);
-    let onclick = {
-        let counter = counter.clone();
-        move |_| {
-            let value = *counter + 1;
-            counter.set(value);
-        }
-    };
-
-    html! {
-        <div>
-            <button {onclick}>{ "+1" }</button>
-            <p>{ *counter }</p>
-        </div>
-    }
-}
+use client::services::routing;
+use client::services::routing::Route;
 
 fn main() {
-    yew::Renderer::<ButtonClickCounter>::new().render();
+    yew::Renderer::<Main>::new().render();
+}
+
+#[function_component(Main)]
+fn app() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<Route> render={routing::switch} />
+        </BrowserRouter>
+    }
 }
