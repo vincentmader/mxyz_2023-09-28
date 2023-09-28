@@ -1,7 +1,7 @@
 use yew::prelude::*;
 
 #[function_component]
-fn App() -> Html {
+fn ButtonClickCounter() -> Html {
     let counter = use_state(|| 0);
     let onclick = {
         let counter = counter.clone();
@@ -20,5 +20,5 @@ fn App() -> Html {
 }
 
 fn main() {
-    yew::Renderer::<App>::new().render();
+    yew::Renderer::<ButtonClickCounter>::new().render();
 }
