@@ -1,0 +1,307 @@
+* Ch.1 - base
+** DONE Initialize git repository.
+1. Create the directory.
+2. Run `git init` to initialize the repo.
+3. Create a `.gitignore` file.
+   #+begin_src
+   .DS_Store
+   ._*
+   #+end_src
+   + Commit: "CHORE Initialize repository with `.gitignore` file".
+5. Create branch `develop`
+   - ... `git remote add origin https://github.com/vincentmader/...`
+** DONE Initialize Rocket HTTPS server.
+- Create branch `feature/rocket-https-server`.
+*** DONE Initialize Cargo crate for server.
+Use `cargo init` to skip the following.
+
+Add `src/server/src/main.rs`, include:
+#+begin_src rust
+fn main() {
+    println!("Hello, world!");
+}
+#+end_src
+
+Add `src/server/Cargo.toml`, include:
+#+begin_src toml
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+#+end_src
+
+Update `/.gitignore`, add:
+#+begin_src
+Cargo.lock
+target
+#+end_src
+
+- Commit: "CHORE Initialize Cargo crate for server, update `.gitignore`".
+*** DONE Implement basic HTTPS server with `rocket.rs`.
+Use example from [[https://rocket.rs]].
+
+Update `src/server/src/main.rs`:
+#+begin_src rust
+#[macro_use] extern crate rocket;
+
+#[get("/hello/<name>/<age>")]
+fn hello(name: &str, age: u8) -> String {
+    format!("Hello, {} year old named {}!", age, name)
+}
+
+#[launch]
+fn rocket() -> _ {
+    rocket::build().mount("/", routes![hello])
+}
+#+end_src
+
+Update `src/server/Cargo.toml`, add:
+#+begin_src toml
+[dependencies]
+rocket = "0.5.0-rc.3"
+#+end_src
+
++ Commit: "FEAT Implement basic HTTP server with `rocket.rs`".
++ Example:
+  - Open [[http://localhost:8000/hello/vincent/25]] in the browser.
+  - You should see: "Hello, 25 year old named vincent!"
+*** DONE Implement serving of HTML files compiled from `.tera` templates.
+Use example from [[https://api.rocket.rs/master/rocket_dyn_templates/]].
+
+Update `/src/server/Cargo.toml`, add:
+#+begin_src toml
+[dependencies.rocket_dyn_templates]
+version = "=0.1.0-rc.3"
+features = ["tera"]
+#+end_src
+
+Update `/src/server/src/main.rs`, add:
+#+begin_src rust
+use rocket_dyn_templates::{Template, context};
+
+#[get("/")]
+fn index() -> Template {
+    Template::render("index", context! { msg: "Hello, Tera Templates!" })
+}
+
+#[launch]
+fn rocket() -> _ {
+    rocket::build()
+        .attach(Template::fairing())
+        .mount("/", routes![hello, index])
+}
+#+end_src
+
+Create `/src/server/templates/index.html.tera`, add:
+#+begin_src html
+<html>
+
+<head>
+</head>
+
+<body>
+    {{ msg }}
+</body>
+
+</html>
+#+end_src
+
++ Commit: "FEAT Implement serving of HTML files compiled from `.tera` templates"
+*** DONE Implement static file server (for CSS).
+Use example from [[https://api.rocket.rs/master/rocket/fs/struct.FileServer.html]].
+
+Update `/src/server/src/main.rs`, add:
+#+begin_src rust
+use rocket::fs::{FileServer, relative};
+
+#[launch]
+fn rocket() -> _ {
+    // NOTE: Update existing rocket here! (See commit.)
+    rocket::build().mount("/", FileServer::from(relative!("static")))
+}
+#+end_src
+
++ Commit: "FEAT Implement serving of static files, & Add CSS to index page".
+*** DONE Add Makefile.
+Goal:
+- Serve web app using `rocket`.
+
+Commands:
+1. `make dev`
+2. `make release`
+
+Commit:
++ "CHORE Add `Makefile` for quickly serving web app with `rocket.rs`".
+** TODO Initialize WASM client with yew.rs.
+*** DONE Install dev-dependencies.
+
+Install WASM target:
+#+begin_src shell
+rustup target add wasm32-unknown-unknown
+#+end_src
+
+Install Trunk:
+#+begin_src shell
+cargo install --locked trunk
+#+end_src
+
+*** DONE Initialize Cargo crate for client.
+This is completely analogous to the initialization of the server crate, see above.
+
++ Commit: "CHORE Initialize Cargo crate for client, update `.gitignore`".
+*** DONE Implement basic yew app.
+Use example from [[https://yew.rs/docs/getting-started/build-a-sample-app]].
+
+Update `/src/client/Cargo.toml`, add:
+#+begin_src toml
+[dependencies]
+yew = { version = "0.20.0", features = ["csr"] }
+#+end_src
+
+Update `/src/client/src/main.rs`, add:
+#+begin_src rust
+use yew::prelude::*;
+
+#[function_component]
+fn App() -> Html {
+    let counter = use_state(|| 0);
+    let onclick = {
+        let counter = counter.clone();
+        move |_| {
+            let value = *counter + 1;
+            counter.set(value);
+        }
+    };
+
+    html! {
+        <div>
+            <button {onclick}>{ "+1" }</button>
+            <p>{ *counter }</p>
+        </div>
+    }
+}
+
+fn main() {
+    yew::Renderer::<App>::new().render();
+}
+#+end_src
+
+Add `/src/client/index.html`, include:
+#+begin_src html
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Yew App</title>
+</head>
+
+</html>
+#+end_src
+
+Update `/.gitignore`, add:
+#+begin_src
+dist
+#+end_src
+
++ COMMIT: "FEAT Implement basic WASM client with `yew.rs` (served via `trunk`")
++ EXAMPLE: Test the above with `trunk serve --open`.
+*** DONE Implement routing.
+Use example from [[https://docs.rs/yew-router/latest/yew_router/]].
+
+In my implementation, I split the following into multiple files,
+(& renamed `Secure` to `About`), but essentially it's this:
+#+begin_src rust
+use yew::functional::*;
+use yew::prelude::*;
+use yew_router::prelude::*;
+
+#[derive(Debug, Clone, Copy, PartialEq, Routable)]
+enum Route {
+    #[at("/")]
+    Home,
+    #[at("/secure")]
+    Secure,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
+
+#[function_component(Secure)]
+fn secure() -> Html {
+    let navigator = use_navigator().unwrap();
+
+    let onclick_callback = Callback::from(move |_| navigator.push(&Route::Home));
+    html! {
+        <div>
+            <h1>{ "Secure" }</h1>
+            <button onclick={onclick_callback}>{ "Go Home" }</button>
+        </div>
+    }
+}
+
+#[function_component(Main)]
+fn app() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<Route> render={switch} />
+        </BrowserRouter>
+    }
+}
+
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Home => html! { <h1>{ "Home" }</h1> },
+        Route::Secure => html! {
+            <Secure />
+        },
+        Route::NotFound => html! { <h1>{ "404" }</h1> },
+    }
+}
+#+end_src
+
++ COMMIT: "FEAT Implement page routing with `yew-router`, & start on dir. hierarchy".
+*** WAIT Implement CSS styling of yew components via ?
+- stylist?
+*** DONE Add Makefile.
+Goal:
+- Serve yew app using `trunk`.
+
+Commands:
+1. `make dev`
+2. `make release`
+
+Commit:
++ "CHORE Add `Makefile` for quickly serving yew app with `trunk`".
+** WAIT Implement server-client comm. with WebSocket.
+*** WAIT Implement WSS server with tokio-tungstenite
+*** WAIT Implement WSS client with yew-websocket
+** WAIT Implement server-side sqlite database with sqlx.
+*** WAIT Automate database setup from scheme def.
+*** WAIT Add HTTP routes for db
+** WAIT Implement Docker virtualization.
+*** WAIT Pre-compile dependencies
+** WAIT Implement encryption for data security.
+* Ch.2 - optional
+** WAIT Increase performance via CSS minification.
+** WAIT Implement loading of `.js` scripts.
+** WAIT Implement loading of `.ts` scripts.
+** WAIT Implement loading is `.wasm` scripts.
+** WAIT Implement rendering of `.org` files.
+** WAIT Implement user login
+*** Implement authentification
+*** Implement encryption
+*** Implement cookies
+* Ch.2 - mader.xyz
+** WAIT Add page "Index" (mader.xyz)
+** WAIT Add page "Simulations".
+** WAIT Add page "About".
+** WAIT Add page "Blog".
+* Ch.3 - mxyz-engine
+** WAIT Implement mxyz-engine.
+** WAIT WAIT Implement client-side computes.
+** WAIT WAIT Implement server-side computes.
+** WAIT WAIT Add support for vanilla-JS / TS simulations.
+** WAIT Add support for WASM simulations.
