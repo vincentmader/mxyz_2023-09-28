@@ -33,9 +33,9 @@ pub fn switch(route: Route) -> Html {
     };
 
     html! {
-        <>
+        <div>
             <MainNavbar route={route}/>
             { page }
-        </>
+        </div>
     }
 }

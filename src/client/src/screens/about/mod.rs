@@ -1,3 +1,4 @@
+use stylist::css;
 use yew::functional::*;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -8,9 +9,16 @@ use crate::services::routing::Route;
 pub fn about() -> Html {
     let navigator = use_navigator().unwrap();
 
+    let class = css!(
+        "
+            padding-left: var(--main_padding_horizontal);
+            padding-right: var(--main_padding_horizontal);
+        "
+    );
+
     let onclick_callback = Callback::from(move |_| navigator.push(&Route::Home));
     html! {
-        <div>
+        <div {class}>
             <h1>{ "About" }</h1>
             <button onclick={onclick_callback}>{ "Go Home" }</button>
             <ButtonClickCounter />
