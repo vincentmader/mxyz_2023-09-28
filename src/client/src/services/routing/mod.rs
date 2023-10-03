@@ -1,6 +1,7 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
+use crate::components::molecules::main_navbar::MainNavbar;
 use crate::screens::about::About;
 use crate::screens::blog::Blog;
 use crate::screens::engine::Engine;
@@ -22,12 +23,19 @@ pub enum Route {
     NotFound,
 }
 
-pub fn switch(routes: Route) -> Html {
-    match routes {
+pub fn switch(route: Route) -> Html {
+    let page = match route {
         Route::Home => html! { <Home /> },
         Route::Engine => html! { <Engine /> },
         Route::Blog => html! { <Blog /> },
         Route::About => html! { <About /> },
         Route::NotFound => html! { <NotFound /> },
+    };
+
+    html! {
+        <>
+            <MainNavbar route={route}/>
+            { page }
+        </>
     }
 }
